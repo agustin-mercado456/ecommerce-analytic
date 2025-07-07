@@ -1,0 +1,97 @@
+[![medium.com/@e\_godwin/ana...](https://images.openai.com/thumbnails/url/2HPOlnicu1mSUVJSUGylr5-al1xUWVCSmqJbkpRnoJdeXJJYkpmsl5yfq5-Zm5ieWmxfaAuUsXL0S7F0Tw70SYrMNc2sqjCJyjZK93DLyDTKTszLjgyvynYvL9At8g7RjciJTM83qQgKDk42Cyz0ccrIc_RKKyjIT1crBgA3BirZ)](https://medium.com/%40E_godwin/analysis-of-an-online-retail-ii-uci-53b976f15232)
+
+El **Online Retail Dataset** (UCI / Kaggle) consta de \~541 K transacciones realizadas entre el 1 de diciembre de 2010 y el 9 de diciembre de 2011 por un e-commerce del Reino Unido que vende artículos de regalo ([archive.ics.uci.edu][1]). El archivo incluye 8 columnas clave:
+
+* **InvoiceNo** (ID de factura, con prefijo "C" para devoluciones)
+* **StockCode** (ID de producto)
+* **Description** (nombre del producto)
+* **Quantity** (unidades vendidas, puede ser negativa si hay devoluciones)
+* **InvoiceDate** (fecha–hora de la transacción)
+* **UnitPrice** (precio por unidad en libras)
+* **CustomerID** (ID de cliente, puede tener valores nulos)
+* **Country** (país de residencia del cliente) ([melodyyip.github.io][2], [github.com][3], [codersarts.com][4])
+
+---
+
+### 🧭 Pasos recomendados para el EDA
+
+1. **Lectura y estructura básica**
+
+   * `df.info()` para tipos y filas
+   * `df.describe()` para estadísticos de `Quantity`, `UnitPrice`, etc. ([codersarts.com][4], [github.com][5])
+   * Revisión de valores faltantes: `CustomerID`, `Description`, etc.
+
+2. **Limpieza básica**
+
+   * Eliminar filas sin `CustomerID` o `Description`
+   * Filtrar transacciones de devolución (`InvoiceNo.str.startswith('C')`) ([medium.com][6])
+   * Eliminar `Quantity <= 0` o `UnitPrice <= 0` (outliers negativos) ([medium.com][7])
+   * Opcional: eliminar duplicados
+
+3. **Feature engineering inicial**
+
+   * Crear columna `Revenue = Quantity * UnitPrice` ([pb6191.com][8])
+   * Extraer fecha y hora: año, mes, día, hora
+
+4. **Análisis temporal**
+
+   * Series de tiempo por mes: conteo de facturas y revenue mensual
+   * Identificar tendencias o estacionalidad (por ejemplo, picos en noviembre/diciembre)&#x20;
+
+5. **Análisis geográfico**
+
+   * Conteo de transacciones/revenue por `Country`
+   * Visualizar los principales mercados (p. ej. Reino Unido domina)
+
+6. **Análisis de producto**
+
+   * Top productos por unidades vendidas y por revenue
+   * Distribución de precios: histogramas, boxplots
+
+7. **Análisis de cliente**
+
+   * Número de clientes únicos (`CustomerID.nunique()`), compras promedio por cliente
+   * Distribución de frecuencia de compra y gasto promedio
+
+8. **Correlaciones y patrones**
+
+   * Matriz de correlación de variables numéricas
+   * Identificar si `Quantity`, `UnitPrice`, `Revenue`, etc. tienen relaciones lineales ([kaggle.com][9], [github.com][5], [medium.com][10], [melodyyip.github.io][2], [github.com][3], [arxiv.org][11], [archive.ics.uci.edu][1])
+
+9. **Visualizaciones**
+
+   * Histogramas y KDE para `Quantity`, `UnitPrice`, `Revenue`
+   * Boxplots (antes/después de limpieza)
+   * Líneas para tendencias temporales
+   * Mapas o bar plots para análisis por país
+   * Gráficos de caja para identificar outliers
+
+10. **Resumen de hallazgos del EDA**
+
+    * Volatilidad en demanda con peaks estacionales
+    * Proporción de devoluciones
+    * Concentración de ventas geográficas
+    * Rango de comportamiento de los clientes
+
+---
+
+### 📊 ¿Por qué este EDA?
+
+* **Comprender la estructura**: dimensiones, fechas, valores nulos y outliers.
+* **Detectar patrones temporales o geográficos** previos al RFM y clustering.
+* **Garantizar calidad de datos** antes del modelado: eliminar casos extremos o inválidos.
+* **Basar decisiones de feature engineering** (columna `Revenue`, variables de fecha, etc.)
+
+Con este análisis profundo, ya tendrás una base sólida para construir correctamente el RFM y aplicar clustering. ¿Querés que prepare el template de este análisis en un notebook?
+
+[1]: https://archive.ics.uci.edu/ml/datasets/Online%2BRetail?utm_source=chatgpt.com "Online Retail - UCI Machine Learning Repository"
+[2]: https://melodyyip.github.io/RFM-UCI-onlineStore/?utm_source=chatgpt.com "UCI Online Retail Dataset"
+[3]: https://github.com/JackZ00/Online-Retail-Data-Set-from-UCI-ML-repo/blob/main/README.md?utm_source=chatgpt.com "Online-Retail-Data-Set-from-UCI-ML-repo/README.md at main - GitHub"
+[4]: https://www.codersarts.com/post/online-retail-dataset-classification-clustering-and-regression?utm_source=chatgpt.com "Online Retail Dataset - Classification, Clustering and Regression"
+[5]: https://github.com/Modata23/Online-Retail-Analysis?utm_source=chatgpt.com "Modata23/Online-Retail-Analysis - GitHub"
+[6]: https://medium.com/%40E_godwin/analysis-of-an-online-retail-ii-uci-53b976f15232?utm_source=chatgpt.com "medium.com/@e_godwin/ana..."
+[7]: https://medium.com/%40packkrittiwat/online-retail-analysis-f5db01153b4e?utm_source=chatgpt.com "medium.com/@packkrittiwa..."
+[8]: https://pb6191.com/online-retail-predictive-analytics/?utm_source=chatgpt.com "pb6191.com/online-retail..."
+[9]: https://www.kaggle.com/datasets/jihyeseo/online-retail-data-set-from-uci-ml-repo?utm_source=chatgpt.com "kaggle.com/datasets/jihy..."
+[10]: https://medium.com/%40mayureshrpalav/clustering-customers-online-retail-dataset-516e961e7bc?utm_source=chatgpt.com "medium.com/@mayureshrpal..."
+[11]: https://arxiv.org/abs/2402.04103?utm_source=chatgpt.com "An Exploration of Clustering Algorithms for Customer Segmentation in the UK Retail Market"

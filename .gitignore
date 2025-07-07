@@ -1,0 +1,65 @@
+# MLflow artifacts and runs
+mlartifacts/
+mlruns/
+notebooks/mlruns/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Environment variables
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db 
+
+# Dataset
+dataset/online_retail_clean.csv
+dataset/rfm_clientes_locales.csv
+dataset/rfm_productos_extranjeros.csv
+dataset/rfm_productos_local.csv
+dataset/rfm_cliente_total.csv
+dataset/rfm_producto_total.csv
+dataset/rfm_clientes_extranjeros.csv
+dataset/rfm_productos_total.csv
