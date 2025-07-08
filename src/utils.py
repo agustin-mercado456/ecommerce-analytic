@@ -9,7 +9,7 @@ import mlflow.sklearn
 import os
 import matplotlib.pyplot as plt
 import seaborn as sns
-
+from sklearn.decomposition import PCA
 import math
 
 
@@ -25,6 +25,8 @@ def kmeans_clustering_mlflow(data, columnas_rfm, max_clusters=10, n_clusters=3, 
     # Escalar datos una sola vez
     scaler = MinMaxScaler()
     data_scaled = scaler.fit_transform(data[columnas_rfm])
+
+   
 
     # Lista para guardar inercia de cada k
     inertias = []
@@ -112,6 +114,26 @@ def kmeans_clustering_mlflow(data, columnas_rfm, max_clusters=10, n_clusters=3, 
             pass
 
         print(f"Run ID final clustering: {mlflow.active_run().info.run_id}")
+        return data
+
+
+def transform_pca(data, n_components=2):
+    scaler = MinMaxScaler()
+    data_scaled = scaler.fit_transform(data)
+    pca = PCA(n_components=n_components)
+    data_pca = pca.fit_transform(data_scaled)
+    
+    return data_pca
+
+
+
+
+
+
+
+
+
+
 
 def run_dbscan(X, eps, min_samples):
     model = DBSCAN(eps=eps, min_samples=min_samples).fit(X)
