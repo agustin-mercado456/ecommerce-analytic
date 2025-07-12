@@ -233,9 +233,51 @@ def evaluar_calinski_harabasz(X, k_range):
     return scores
 
 
-def run_dbscan(X, eps, min_samples):
-    model = DBSCAN(eps=eps, min_samples=min_samples).fit(X)
-    return model.labels_
+def run_dbscan(X, eps, min_samples,experiment_name="DBSCAN"):
+    mlflow.set_tracking_uri("http://localhost:5000")
+    mlflow.set_experiment(experiment_name)
+
+    with mlflow.start_run(run_name=f"Final_Clustering_dbscan"):
+        model = DBSCAN(eps=eps, min_samples=min_samples).fit(X)
+        mlflow.log_param("eps", eps)
+        mlflow.log_param("min_samples", min_samples)
+        labels = model.labels_
+        n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
+        if n_clusters > 1:
+            mlflow.log_metric("Silhouette Score", silhouette_score(X, model.labels_))
+            mlflow.log_metric("Calinski-Harabasz Score", calinski_harabasz_score(X, model.labels_))
+            mlflow.log_metric("Davies-Bouldin Score", davies_bouldin_score(X, model.labels_))
+        else:
+            mlflow.log_metric("Silhouette Score", -1)
+            mlflow.log_metric("Calinski-Harabasz Score", -1)
+            mlflow.log_metric("Davies-Bouldin Score", -1)
+
+        mlflow.log_metric("Cantidad de Clusters", n_clusters)
+  
+        # Graficar los clusters
+        plt.figure(figsize=(8, 5))
+        sns.scatterplot(x=X.iloc[:, 0], y=X.iloc[:, 1], hue=model.labels_, palette='Set1')
+        plt.title('Visualización de los clusters')
+        plt.xlabel('Característica 1')
+        plt.ylabel('Característica 2')
+        plt.legend()
+        plt.show()
+        plot_path = "cluster_pairs_plot.png"
+        plt.tight_layout()
+        plt.savefig(plot_path)
+        mlflow.log_artifact(plot_path)
+        plt.close()
+
+        # Limpiar archivo temporal
+        try:
+            os.remove(plot_path)
+        except Exception:
+            pass
+
+        print(f"Run ID final clustering: {mlflow.active_run().info.run_id}")
+    df_etiquetado=X.copy()
+    df_etiquetado['Cluster']=model.labels_
+    return df_etiquetado
 
 def run_agglomerative(X, k, linkage='ward'):
     model = AgglomerativeClustering(n_clusters=k, linkage=linkage).fit(X)
