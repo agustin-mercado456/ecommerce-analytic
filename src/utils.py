@@ -279,9 +279,54 @@ def run_dbscan(X, eps, min_samples,experiment_name="DBSCAN"):
     df_etiquetado['Cluster']=model.labels_
     return df_etiquetado
 
-def run_agglomerative(X, k, linkage='ward'):
-    model = AgglomerativeClustering(n_clusters=k, linkage=linkage).fit(X)
-    return model.labels_
+def run_agglomerative_mlflow(X, n_clusters, linkage='ward', experiment_name="Agglomerative"):
+    mlflow.set_tracking_uri("http://localhost:5000")
+    mlflow.set_experiment(experiment_name)
+
+    # Cerrar run activo si existe para evitar conflicto
+    if mlflow.active_run() is not None:
+        mlflow.end_run()
+
+    with mlflow.start_run(run_name=f"Final_Clustering_agglomerative_k={n_clusters}"):
+        model = AgglomerativeClustering(n_clusters=n_clusters, linkage=linkage)
+        labels = model.fit_predict(X)
+        mlflow.log_param("n_clusters", n_clusters)
+        mlflow.log_param("linkage", linkage)
+        n_clusters_found = len(set(labels))
+        if n_clusters_found > 1:
+            mlflow.log_metric("Silhouette Score", silhouette_score(X, labels))
+            mlflow.log_metric("Calinski-Harabasz Score", calinski_harabasz_score(X, labels))
+            mlflow.log_metric("Davies-Bouldin Score", davies_bouldin_score(X, labels))
+        else:
+            mlflow.log_metric("Silhouette Score", -1)
+            mlflow.log_metric("Calinski-Harabasz Score", -1)
+            mlflow.log_metric("Davies-Bouldin Score", -1)
+
+        mlflow.log_metric("Cantidad de Clusters", n_clusters_found)
+
+        # Graficar los clusters (solo si X tiene al menos 2 columnas)
+        if X.shape[1] >= 2:
+            plt.figure(figsize=(8, 5))
+            sns.scatterplot(x=X.iloc[:, 0], y=X.iloc[:, 1], hue=labels, palette='Set1')
+            plt.title('Visualización de los clusters (Agglomerative)')
+            plt.xlabel('Característica 1')
+            plt.ylabel('Característica 2')
+            plt.legend()
+            plot_path = "cluster_pairs_plot.png"
+            plt.tight_layout()
+            plt.savefig(plot_path)
+            mlflow.log_artifact(plot_path)
+            plt.close()
+            # Limpiar archivo temporal
+            try:
+                os.remove(plot_path)
+            except Exception:
+                pass
+
+        print(f"Run ID final clustering: {mlflow.active_run().info.run_id}")
+    df_etiquetado = X.copy()
+    df_etiquetado['Cluster'] = labels
+    return df_etiquetado
 
 def run_gmm(X, k):
     model = GaussianMixture(n_components=k, random_state=42).fit(X)
@@ -297,3 +342,151 @@ def evaluate_clustering(X, labels):
         "calinski_harabasz": calinski_harabasz_score(X, labels),
         "davies_bouldin": davies_bouldin_score(X, labels)
     }
+
+def silhouette_analysis_agglomerative(X, range_n_clusters, linkage='ward'):
+    import matplotlib.cm as cm
+    import matplotlib.pyplot as plt
+    import numpy as np
+    from sklearn.cluster import AgglomerativeClustering
+    from sklearn.metrics import silhouette_samples, silhouette_score
+
+    for n_clusters in range_n_clusters:
+        fig, (ax1, ax2) = plt.subplots(1, 2)
+        fig.set_size_inches(18, 7)
+
+        ax1.set_xlim([-0.1, 1])
+        ax1.set_ylim([0, len(X) + (n_clusters + 1) * 10])
+
+        clusterer = AgglomerativeClustering(n_clusters=n_clusters, linkage=linkage)
+        cluster_labels = clusterer.fit_predict(X)
+
+        silhouette_avg = silhouette_score(X, cluster_labels)
+        print(f"Para n_clusters = {n_clusters}, el silhouette promedio es: {silhouette_avg:.4f}")
+
+        sample_silhouette_values = silhouette_samples(X, cluster_labels)
+
+        y_lower = 10
+        for i in range(n_clusters):
+            ith_cluster_silhouette_values = sample_silhouette_values[cluster_labels == i]
+            ith_cluster_silhouette_values.sort()
+
+            size_cluster_i = ith_cluster_silhouette_values.shape[0]
+            y_upper = y_lower + size_cluster_i
+
+            color = cm.nipy_spectral(float(i) / n_clusters)
+            ax1.fill_betweenx(
+                np.arange(y_lower, y_upper),
+                0,
+                ith_cluster_silhouette_values,
+                facecolor=color,
+                edgecolor=color,
+                alpha=0.7,
+            )
+            ax1.text(-0.05, y_lower + 0.5 * size_cluster_i, str(i))
+            y_lower = y_upper + 10
+
+        ax1.set_title("Silhouette plot para diferentes clusters (Agglomerative)")
+        ax1.set_xlabel("Coeficiente de silueta")
+        ax1.set_ylabel("Etiqueta de clúster")
+        ax1.axvline(x=silhouette_avg, color="red", linestyle="--")
+        ax1.set_yticks([])
+        ax1.set_xticks(np.arange(-0.1, 1.1, 0.2))
+
+        colors = cm.nipy_spectral(cluster_labels.astype(float) / n_clusters)
+        ax2.scatter(X[:, 0], X[:, 1], marker=".", s=30, lw=0, alpha=0.7, c=colors, edgecolor="k")
+
+        # AgglomerativeClustering no tiene centroides, así que no se grafican
+
+        ax2.set_title("Visualización de los clústeres (Agglomerative)")
+        ax2.set_xlabel("1ª característica")
+        ax2.set_ylabel("2ª característica")
+
+        plt.suptitle(
+            f"Análisis de silueta para Agglomerative con n_clusters = {n_clusters}, linkage = {linkage}",
+            fontsize=14,
+            fontweight="bold",
+        )
+
+    plt.show()
+
+    return silhouette_avg
+
+def elbow_method_agglomerative(X, k_range, linkage='ward'):
+    """
+    Método del codo para AgglomerativeClustering usando la suma de distancias intra-cluster como métrica.
+    """
+    from sklearn.cluster import AgglomerativeClustering
+    import numpy as np
+    import matplotlib.pyplot as plt
+    from scipy.spatial.distance import cdist
+
+    intra_dists = []
+    for k in k_range:
+        model = AgglomerativeClustering(n_clusters=k, linkage=linkage)
+        labels = model.fit_predict(X)
+        # Calcular suma de distancias intra-cluster
+        dist_sum = 0
+        for cluster in range(k):
+            cluster_points = X[labels == cluster]
+            if len(cluster_points) > 1:
+                center = cluster_points.mean(axis=0)
+                dist_sum += np.sum(np.linalg.norm(cluster_points - center, axis=1))
+        intra_dists.append(dist_sum)
+
+    plt.figure(figsize=(8, 5))
+    plt.plot(k_range, intra_dists, 'bo-')
+    plt.xlabel('Número de clusters (k)')
+    plt.ylabel('Suma de distancias intra-cluster')
+    plt.title('Método del Codo (Agglomerative)')
+    plt.grid(True)
+    plt.show()
+
+    return intra_dists
+
+def plot_davies_bouldin_scores_agglomerative(X, k_range, linkage='ward'):
+    from sklearn.cluster import AgglomerativeClustering
+    from sklearn.metrics import davies_bouldin_score
+    import matplotlib.pyplot as plt
+
+    db_scores = []
+    for k in k_range:
+        model = AgglomerativeClustering(n_clusters=k, linkage=linkage)
+        labels = model.fit_predict(X)
+        db = davies_bouldin_score(X, labels)
+        db_scores.append(db)
+
+    plt.figure(figsize=(8, 5))
+    plt.plot(k_range, db_scores, marker='o', linestyle='-', color='purple')
+    plt.title("Índice de Davies-Bouldin para diferentes k (Agglomerative)")
+    plt.xlabel("Número de clusters (k)")
+    plt.ylabel("Davies-Bouldin Score")
+    plt.grid(True)
+    plt.show()
+
+    return dict(zip(k_range, db_scores))
+
+def evaluar_calinski_harabasz_agglomerative(X, k_range, linkage='ward'):
+    """
+    Calcula el índice de Calinski-Harabasz para los números de clusters dados en k_range
+    usando AgglomerativeClustering y grafica los resultados.
+    """
+    from sklearn.cluster import AgglomerativeClustering
+    from sklearn.metrics import calinski_harabasz_score
+    import matplotlib.pyplot as plt
+
+    scores = []
+    for k in k_range:
+        model = AgglomerativeClustering(n_clusters=k, linkage=linkage)
+        labels = model.fit_predict(X)
+        score = calinski_harabasz_score(X, labels)
+        scores.append(score)
+
+    plt.figure(figsize=(8,5))
+    plt.plot(list(k_range), scores, marker='o')
+    plt.title('Índice de Calinski-Harabasz para distintos números de clusters (Agglomerative)')
+    plt.xlabel('Número de clusters (k)')
+    plt.ylabel('Calinski-Harabasz Score')
+    plt.grid(True)
+    plt.show()
+
+    return scores
