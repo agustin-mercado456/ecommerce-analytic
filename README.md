@@ -3,7 +3,7 @@
 
 
 
-## 🚀 Instalación y Configuración
+##  Instalación y Configuración
 
 ### Prerrequisitos
 - Anaconda o Miniconda instalado en tu sistema
@@ -32,7 +32,7 @@
    conda list
    ```
 
-### 📦 Dependencias incluidas
+###  Dependencias incluidas
 
 El archivo `environment.yml` incluye las siguientes librerías principales:
 - **numpy**: Computación numérica
@@ -42,24 +42,20 @@ El archivo `environment.yml` incluye las siguientes librerías principales:
 - **scipy**: Funciones científicas
 - **seaborn**: Visualizaciones estadísticas
 - **mlflow**: Experimentación y tracking de ML
+- **optuna**: Búsqueda de hiperparámetros óptimos
 
-## 🔧 Solución de problemas comunes
+## Recomendaciones de Ejecución
 
-### Error: "conda command not found"
-- Asegúrate de que Anaconda/Miniconda esté instalado correctamente
-- Reinicia tu terminal después de la instalación
+Para una correcta exploración del proyecto, se recomienda seguir el siguiente orden al ejecutar los notebooks:
 
-### Error: "Environment already exists"
-- Si el entorno ya existe, puedes actualizarlo:
-  ```bash
-  conda env update -f environment.yml
-  ```
+- Ejecutar el notebook 01_EDA_and_Cleaning para realizar la limpieza y exploración inicial de los datos.
 
-### Error: "Package conflicts"
-- Elimina el entorno existente y créalo de nuevo:
-  ```bash
-  conda env remove -n ecommerce
-  conda env create -f environment.yml
-  ```
+- Continuar con 02_Feature_Engineering_andRFM para generar las variables y aplicar la segmentación RFM.
+
+- Finalmente, dirigirse a la carpeta K-means para analizar los resultados del clustering y las recomendaciones generadas.
+
+### Conclusión general
+
+El análisis completo y las recomendaciones finales se encuentran en el notebook conclusion_general.ipynb.
 
 
